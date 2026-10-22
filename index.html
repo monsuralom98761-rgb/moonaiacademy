@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOON AI ACADEMY</title>
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#080b16;color:#f4f7ff;font-family:Arial,sans-serif;line-height:1.7}
+header{background:#111a30;padding:22px 15px;text-align:center;border-bottom:1px solid #263550}
+.logo{font-size:27px;font-weight:bold;color:#73e4ff}
+nav{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:12px}
+a{color:#80e7ff;text-decoration:none}
+nav a{font-size:14px}
+.hero{text-align:center;padding:65px 18px 55px;background:linear-gradient(140deg,#111a30,#191333)}
+.hero h1{font-size:clamp(35px,8vw,58px);line-height:1.15;margin:10px 0 20px}
+.accent{color:#76e5ff}
+.hero p{color:#c4cce0;max-width:620px;margin:0 auto 25px;font-size:18px}
+button,.button{border:0;border-radius:10px;padding:13px 19px;background:#70e2ff;color:#08101d;font-size:16px;font-weight:bold;cursor:pointer;display:inline-block;margin:5px}
+.secondary{background:#222d48;color:#fff;border:1px solid #3b4c70}
+section{max-width:1000px;margin:auto;padding:35px 18px}
+h2{color:#79e5ff}
+.intro{text-align:center;color:#c6cde0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.card{background:#141d32;border:1px solid #293954;border-radius:18px;padding:22px}
+.card h3{color:#7de5ff;margin-top:0}
+.card p{color:#c5cde0}
+.lesson{display:none;background:#10192c;border:1px solid #314563;border-radius:16px;padding:24px;margin-top:20px}
+.lesson h3{color:#7de5ff}
+.lesson li{margin:9px 0}
+.quiz-option{display:block;width:100%;text-align:left;background:#222e49;color:white;margin:10px 0;padding:15px;border-radius:10px}
+#quizResult{font-weight:bold;color:#7de5ff;min-height:28px}
+footer{text-align:center;color:#adb8d0;padding:30px 15px;background:#070a12}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🌙 MOON AI ACADEMY</div>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#courses">Courses</a>
+    <a href="#lessons">AI Lessons</a>
+    <a href="#quiz">Quiz</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero" id="home">
+  <h1>LEARN <span class="accent">WITHOUT<br>LIMITS</span></h1>
+  <p>Learn AI, Coding, Computer Skills and Technology Step by Step — Even as a Beginner!</p>
+  <button onclick="document.getElementById('courses').scrollIntoView({behavior:'smooth'})">Explore Courses ↓</button>
+  <button class="secondary" onclick="openLesson(1)">Learn AI →</button>
+</section>
+
+<section id="courses">
+  <h2>🚀 Explore Our Courses</h2>
+  <p class="intro">Start learning today. No experience needed!</p>
+  <div class="grid">
+    <div class="card">
+      <h3>🤖 Learn Artificial Intelligence</h3>
+      <p>Discover AI tools and learn how to use them in daily life.</p>
+      <button onclick="openLesson(1)">Learn AI</button>
+    </div>
+    <div class="card">
+      <h3>💻 Learn Coding</h3>
+      <p>Start with HTML, CSS and JavaScript to build your own website.</p>
+      <button onclick="document.getElementById('codingInfo').scrollIntoView({behavior:'smooth'})">Explore Coding</button>
+    </div>
+    <div class="card">
+      <h3>⌨️ Keyboard Skills</h3>
+      <p>Learn keyboard keys, shortcuts and typing skills.</p>
+    </div>
+    <div class="card">
+      <h3>📱 Computer & Mobile</h3>
+      <p>Learn useful digital skills, apps and technology basics.</p>
+    </div>
+  </div>
+</section>
+
+<section id="lessons">
+  <h2>📘 AI Learning Center</h2>
+  <p class="intro">Choose a lesson and learn step by step.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>Lesson 1: What Is AI?</h3>
+      <p>Understand artificial intelligence in simple words.</p>
+      <button onclick="openLesson(1)">Start Lesson 1</button>
+    </div>
+    <div class="card">
+      <h3>Lesson 2: How to Use AI</h3>
+      <p>Learn how to ask AI questions and write useful prompts.</p>
+      <button onclick="openLesson(2)">Start Lesson 2</button>
+    </div>
+  </div>
+
+  <div class="lesson" id="lesson1">
+    <h3>🤖 Lesson 1: What Is Artificial Intelligence?</h3>
+    <p>Artificial Intelligence, or AI, is technology that helps computers perform tasks that normally require human intelligence.</p>
+    <p><b>Examples of AI:</b></p>
+    <ul>
+      <li>Chatbots that answer questions.</li>
+      <li>Maps that suggest routes.</li>
+      <li>Tools that help write, translate or create images.</li>
+    </ul>
+    <p><b>Remember:</b> AI can make mistakes. Check important information before trusting it.</p>
+    <button onclick="openLesson(2)">Next Lesson →</button>
+  </div>
+
+  <div class="lesson" id="lesson2">
+    <h3>✨ Lesson 2: How to Use AI</h3>
+    <p>You can give an AI tool an instruction or question. This instruction is called a prompt.</p>
+    <p><b>Example of a weak prompt:</b> "Teach me."</p>
+    <p><b>Example of a better prompt:</b> "Explain HTML in simple English with one example for a beginner."</p>
+    <p><b>Try these steps:</b></p>
+    <ol>
+      <li>Tell the AI what you want to do.</li>
+      <li>Explain your level or goal.</li>
+      <li>Ask for a clear example.</li>
+      <li>Ask follow-up questions if you need help.</li>
+    </ol>
+    <p><b>Safety tip:</b> Do not share passwords, private information or verification codes with AI tools.</p>
+    <button onclick="document.getElementById('quiz').scrollIntoView({behavior:'smooth'})">Take the Quiz ↓</button>
+    <button class="secondary" onclick="openLesson(1)">← Previous Lesson</button>
+  </div>
+</section>
+
+<section id="quiz">
+  <h2>🧠 Quick Quiz</h2>
+  <div class="card">
+    <p><b>Question 1: What does AI stand for?</b></p>
+    <button class="quiz-option" onclick="answer(false)">A. Automatic Internet</button>
+    <button class="quiz-option" onclick="answer(true)">B. Artificial Intelligence</button>
+    <button class="quiz-option" onclick="answer(false)">C. Advanced Input</button>
+    <p id="quizResult" aria-live="polite"></p>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <p><b>Question 2: What is a prompt?</b></p>
+    <button class="quiz-option" onclick="answer2(true)">A. An instruction or question given to AI</button>
+    <button class="quiz-option" onclick="answer2(false)">B. A computer screen</button>
+    <button class="quiz-option" onclick="answer2(false)">C. A keyboard key</button>
+    <p id="quizResult2" aria-live="polite"></p>
+  </div>
+</section>
+
+<section id="codingInfo">
+  <h2>💻 Start Coding</h2>
+  <div class="card">
+    <h3>Your First HTML Idea</h3>
+    <p>HTML gives a webpage its structure. CSS controls its appearance, and JavaScript adds interactivity.</p>
+    <p>Example: <code>&lt;h1&gt;Hello World!&lt;/h1&gt;</code></p>
+    <p>This HTML creates a large heading that says “Hello World!”</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  © 2026 MOON AI ACADEMY<br>
+  LEARN • CREATE • GROW
+</footer>
+
+<script>
+function openLesson(n){
+  document.getElementById('lesson1').style.display=n===1?'block':'none';
+  document.getElementById('lesson2').style.display=n===2?'block':'none';
+  document.getElementById('lessons').scrollIntoView({behavior:'smooth'});
+}
+function answer(correct){
+  document.getElementById('quizResult').textContent=correct?'🎉 Correct! AI means Artificial Intelligence.':'❌ Try again! Choose B: Artificial Intelligence.';
+}
+function answer2(correct){
+  document.getElementById('quizResult2').textContent=correct?'🎉 Correct! A prompt is an instruction or question.':'❌ Try again! Choose A.';
+}
+</script>
+</body>
+</html>

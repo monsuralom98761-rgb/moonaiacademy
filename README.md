@@ -214,3 +214,242 @@ document.getElementById("quizForm").addEventListener("submit",function(e){
 </script>
 </body>
 </html>
+/*
+  Moon AI Academy video library.
+  Before use: fill in firebaseConfig below, enable Email/Password Auth,
+  create Firestore + Storage, and deploy the security rules in README.md.
+*/
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, deleteDoc, doc
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
+
+// Firebase Console > Project settings > Your apps > SDK setup and configuration
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_FIREBASE_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_STORAGE_BUCKET",
+  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+  appId: "PASTE_YOUR_FIREBASE_APP_ID"
+};
+
+const $ = (id) => document.getElementById(id);
+const videoGrid = $("videoGrid");
+const pageMessage = $("pageMessage");
+let auth, db, storage, currentUser = null, approved = false;
+let firebaseReady = false;
+
+function showPageMessage(message) { pageMessage.textContent = message; }
+function setUploadStatus(message) { $("uploadStatus").textContent = message; }
+function escapeText(value="") {
+  return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function configIsSet() {
+  return firebaseConfig.apiKey.startsWith("AIza") &&
+    !firebaseConfig.projectId.startsWith("PASTE_") &&
+    !firebaseConfig.appId.startsWith("PASTE_");
+}
+function showSetupNotice() {
+  videoGrid.innerHTML = '<div class="empty-state">Firebase setup is not finished yet.<br>Follow the setup steps in <b>README.md</b>, then refresh this page.</div>';
+  $("videoCount").textContent = "Setup required";
+  $("signInButton").disabled = true;
+  $("signInButton").title = "Add your Firebase config in app.js first";
+}
+function makeVideoCard(video) {
+  const card = document.createElement("article");
+  card.className = "video-card";
+  const player = document.createElement("video");
+  player.controls = true;
+  player.preload = "metadata";
+  player.playsInline = true;
+  player.src = video.url;
+  player.setAttribute("aria-label", video.title || "Video lesson");
+  const info = document.createElement("div");
+  info.className = "video-info";
+  const title = document.createElement("h3");
+  title.textContent = video.title || "Untitled video";
+  const desc = document.createElement("p");
+  desc.textContent = video.description || "No description added.";
+  const meta = document.createElement("div");
+  meta.className = "video-meta";
+  meta.textContent = "MOON AI ACADEMY";
+  info.append(title, desc, meta);
+  if (approved && currentUser && video.ownerUid === currentUser.uid) {
+    const del = document.createElement("button");
+    del.className = "btn btn-outline";
+    del.type = "button";
+    del.textContent = "Delete video";
+    del.style.marginTop = "14px";
+    del.addEventListener("click", () => removeVideo(video, card, del));
+    info.appendChild(del);
+  }
+  card.append(player, info);
+  return card;
+}
+async function loadVideos() {
+  videoGrid.replaceChildren();
+  const loading = document.createElement("div");
+  loading.className = "empty-state";
+  loading.textContent = "Loading video library…";
+  videoGrid.appendChild(loading);
+  try {
+    const snapshot = await getDocs(query(collection(db, "videos"), orderBy("createdAt", "desc")));
+    videoGrid.replaceChildren();
+    let count = 0;
+    snapshot.forEach(item => {
+      const v = item.data();
+      if (typeof v.url !== "string" || !v.url.startsWith("https://")) return;
+      videoGrid.appendChild(makeVideoCard({ id: item.id, ...v }));
+      count++;
+    });
+    $("videoCount").textContent = `${count} video${count === 1 ? "" : "s"}`;
+    if (!count) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "No videos yet. Approved creators can sign in and upload the first lesson.";
+      videoGrid.appendChild(empty);
+    }
+  } catch (error) {
+    console.error(error);
+    videoGrid.innerHTML = '<div class="empty-state">Could not load videos. Check Firestore rules and setup in README.md.</div>';
+  }
+}
+async function checkPermission(user) {
+  if (!user) return false;
+  try {
+    // The trusted permission is stored in a Firestore document whose ID is the user's UID.
+    const { getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js");
+    const snap = await getDoc(doc(db, "uploaders", user.uid));
+    return snap.exists() && snap.data().canUpload === true;
+  } catch (e) {
+    console.error("Could not check upload permission", e);
+    return false;
+  }
+}
+function refreshCreatorUI() {
+  $("signInButton").hidden = !!currentUser;
+  $("signOutButton").hidden = !currentUser;
+  $("uploadNav").hidden = !approved;
+  $("upload").hidden = !approved;
+  if (approved) showPageMessage("Signed in: video upload is enabled for this approved account.");
+  else if (currentUser) showPageMessage("This account is signed in but is not approved to upload videos.");
+  else showPageMessage("");
+}
+async function removeVideo(video, card, button) {
+  if (!approved || !currentUser || video.ownerUid !== currentUser.uid) return;
+  if (!confirm(`Delete "${video.title}"? This cannot be undone.`)) return;
+  button.disabled = true;
+  try {
+    await deleteDoc(doc(db, "videos", video.id));
+    if (video.storagePath) await deleteObject(ref(storage, video.storagePath));
+    card.remove();
+    showPageMessage("Video deleted.");
+    await loadVideos();
+  } catch (e) {
+    console.error(e);
+    showPageMessage("Could not delete video. Check permissions and try again.");
+    button.disabled = false;
+  }
+}
+
+$("signInButton").addEventListener("click", () => {
+  $("authError").textContent = "";
+  $("authDialog").showModal();
+});
+$("closeDialog").addEventListener("click", () => $("authDialog").close());
+$("authForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  $("authError").textContent = "";
+  try {
+    await signInWithEmailAndPassword(auth, $("email").value.trim(), $("password").value);
+    $("authDialog").close();
+    $("authForm").reset();
+  } catch (error) {
+    console.error(error);
+    $("authError").textContent = "Sign-in failed. Check your email/password and try again.";
+  }
+});
+$("signOutButton").addEventListener("click", async () => {
+  try { await signOut(auth); }
+  catch (e) { console.error(e); showPageMessage("Could not sign out. Please try again."); }
+});
+$("uploadForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!firebaseReady || !currentUser || !approved) {
+    setUploadStatus("Only approved creator accounts can upload.");
+    return;
+  }
+  const file = $("videoFile").files[0];
+  const title = $("videoTitle").value.trim();
+  const description = $("videoDescription").value.trim();
+  if (!file || !title) { setUploadStatus("Enter a title and choose a video."); return; }
+  const allowedTypes = ["video/mp4","video/webm","video/ogg","video/quicktime"];
+  if (!allowedTypes.includes(file.type)) { setUploadStatus("Choose an MP4, WebM, OGG, or MOV video."); return; }
+  const maxBytes = 500 * 1024 * 1024;
+  if (file.size > maxBytes) { setUploadStatus("This demo allows videos up to 500 MB. Increase limits only after reviewing storage and cost."); return; }
+  $("uploadButton").disabled = true;
+  $("progressBar").style.width = "0%";
+  setUploadStatus("Starting upload…");
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
+  const storagePath = `videos/${currentUser.uid}/${Date.now()}-${safeName}`;
+  const storageRef = ref(storage, storagePath);
+  const task = uploadBytesResumable(storageRef, file, { contentType: file.type });
+  task.on("state_changed",
+    snapshot => {
+      const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+      $("progressBar").style.width = `${percent}%`;
+      setUploadStatus(`Uploading… ${percent}%`);
+    },
+    error => {
+      console.error(error);
+      setUploadStatus("Upload failed. Check your Storage rules, billing/quota, and internet connection.");
+      $("uploadButton").disabled = false;
+    },
+    async () => {
+      try {
+        const url = await getDownloadURL(task.snapshot.ref);
+        await addDoc(collection(db, "videos"), {
+          title, description, url, storagePath, ownerUid: currentUser.uid,
+          createdAt: serverTimestamp(), fileSize: file.size, contentType: file.type
+        });
+        $("uploadForm").reset();
+        $("progressBar").style.width = "100%";
+        setUploadStatus("Upload complete! Your video is now in the library.");
+        await loadVideos();
+      } catch (error) {
+        console.error(error);
+        setUploadStatus("The file uploaded but saving its details failed. Ask the site owner to check Firestore rules.");
+      } finally {
+        $("uploadButton").disabled = false;
+      }
+    }
+  );
+});
+
+if (!configIsSet()) {
+  showSetupNotice();
+} else {
+  try {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    firebaseReady = true;
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      approved = await checkPermission(user);
+      refreshCreatorUI();
+      await loadVideos();
+    });
+  } catch (error) {
+    console.error(error);
+    showSetupNotice();
+  }
+}
